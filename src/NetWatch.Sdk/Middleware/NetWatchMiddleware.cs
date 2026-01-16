@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NetWatch.Sdk.Buffering;
 using NetWatch.Sdk.Configuration;
 using NetWatch.Sdk.Models;
 using System.Diagnostics;
@@ -13,15 +14,18 @@ public class NetWatchMiddleware
     private readonly RequestDelegate _next;
     private readonly NetWatchOptions _options;
     private readonly ILogger<NetWatchMiddleware> _logger;
+    private readonly IMetricsBuffer _buffer;
 
     public NetWatchMiddleware(
         RequestDelegate next,
         IOptions<NetWatchOptions> options,
-        ILogger<NetWatchMiddleware> logger)
+        ILogger<NetWatchMiddleware> logger,
+        IMetricsBuffer buffer)
     {
         _next = next ?? throw new ArgumentNullException(nameof(next));
         _options = options.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -71,8 +75,18 @@ public class NetWatchMiddleware
                 stopWatch.ElapsedMilliseconds,
                 capturedException);
 
-            _logger.LogDebug(
-                $"Captured metric: {metric.Method} {metric.Path} - {metric.DurationMs}ms - Status: {metric.StatusCode}");
+            try
+            {
+                await _buffer.AddAsync(metric);
+
+                _logger.LogDebug(
+                    $"Captured metric: {metric.Method} {metric.Path} - {metric.DurationMs}ms - Status: {metric.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    $"Failed to buffer metric for {metric.Method} {metric.Path}");
+            }
         }
     }
 
