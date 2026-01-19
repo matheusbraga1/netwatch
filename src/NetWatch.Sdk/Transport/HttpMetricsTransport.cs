@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NetWatch.Sdk.Configuration;
-using NetWatch.Sdk.Models;
+using NetWatch.Shared.Models;
 using System.Net.Http.Json;
 
 namespace NetWatch.Sdk.Transport;
@@ -14,11 +15,11 @@ public class HttpMetricsTransport : IMetricsTransport, IDisposable
 
     public HttpMetricsTransport(
         HttpClient htppClient,
-        NetWatchOptions options,
+        IOptions<NetWatchOptions> options,
         ILogger<HttpMetricsTransport> logger)
     {
         _httpClient = htppClient ?? throw new ArgumentNullException(nameof(htppClient));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _options = options.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         ConfigureHttpClient();

@@ -1,3 +1,5 @@
+ï»¿using Microsoft.Extensions.Options;
+using NetWatch.Sdk.Configuration;
 using NetWatch.Sdk.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,17 @@ builder.Services.AddNetWatch(options =>
     options.MaxBufferSize = 10;
     options.SampleRate = 1.0;
 });
+
+var serviceProvider = builder.Services.BuildServiceProvider();
+try
+{
+    var opts = serviceProvider.GetRequiredService<IOptions<NetWatchOptions>>();
+    Console.WriteLine($"NetWatchOptions registrado! ApiKey: {opts.Value.ApiKey}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"ERRO: NetWatchOptions NÃƒO estÃ¡ registrado: {ex.Message}");
+}
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -69,7 +82,7 @@ app.MapGet("/api/test/slow", async () =>
 // 3. Endpoint com erro (teste de exception handling)
 app.MapGet("/api/test/error", () =>
 {
-    throw new InvalidOperationException("Este é um erro intencional para testar captura de exceções pelo NetWatch");
+    throw new InvalidOperationException("Este Ã© um erro intencional para testar captura de exceÃ§Ãµes pelo NetWatch");
 })
 .WithName("TestError")
 .WithTags("Test")
@@ -80,7 +93,7 @@ app.MapGet("/api/test/notfound", () =>
 {
     return Results.NotFound(new
     {
-        message = "Recurso não encontrado",
+        message = "Recurso nÃ£o encontrado",
         timestamp = DateTime.UtcNow
     });
 })
@@ -88,7 +101,7 @@ app.MapGet("/api/test/notfound", () =>
 .WithTags("Test")
 .WithOpenApi();
 
-// 5. Endpoint com POST (teste de diferentes métodos HTTP)
+// 5. Endpoint com POST (teste de diferentes mÃ©todos HTTP)
 app.MapPost("/api/test/create", (CreateRequest request) =>
 {
     return Results.Created($"/api/test/{Guid.NewGuid()}", new
@@ -108,7 +121,7 @@ app.MapGet("/api/test/query", (string? name, int? age) =>
     return Results.Ok(new
     {
         message = "Query parameters recebidos",
-        name = name ?? "não fornecido",
+        name = name ?? "nÃ£o fornecido",
         age = age ?? 0,
         timestamp = DateTime.UtcNow
     });
@@ -122,7 +135,7 @@ app.MapGet("/api/test/users/{id:int}", (int id) =>
 {
     return Results.Ok(new
     {
-        message = "Usuário encontrado",
+        message = "UsuÃ¡rio encontrado",
         userId = id,
         userName = $"User_{id}",
         timestamp = DateTime.UtcNow
@@ -132,7 +145,7 @@ app.MapGet("/api/test/users/{id:int}", (int id) =>
 .WithTags("Test")
 .WithOpenApi();
 
-// 8. Health check (este será ignorado pelo NetWatch por padrão)
+// 8. Health check (este serÃ¡ ignorado pelo NetWatch por padrÃ£o)
 app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
     .WithName("Health")
     .WithTags("Health")

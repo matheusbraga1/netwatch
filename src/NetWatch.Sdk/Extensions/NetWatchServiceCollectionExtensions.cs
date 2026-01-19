@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NetWatch.Sdk.Buffering;
 using NetWatch.Sdk.Configuration;
@@ -11,7 +12,7 @@ public static class NetWatchServiceCollectionExtensions
 {
     public static IServiceCollection AddNetWatch(
         this IServiceCollection services,
-        Action<NetWatchOptions>? configureOptions)
+        Action<NetWatchOptions> configureOptions)
     {
         if (services == null)
             throw new ArgumentNullException(nameof(services));
@@ -19,41 +20,43 @@ public static class NetWatchServiceCollectionExtensions
         if (configureOptions == null)
             throw new ArgumentNullException(nameof(configureOptions));
 
+        // ✅ Registra configurações
         services.Configure(configureOptions);
 
-        services.AddOptions<NetWatchOptions>()
-            .Validate(options =>
-            {
-                if (string.IsNullOrWhiteSpace(options.ApiKey))
-                    return false;
+        // ✅ Validação
+        services.PostConfigure<NetWatchOptions>(options =>
+        {
+            if (string.IsNullOrWhiteSpace(options.ApiKey))
+                throw new InvalidOperationException("NetWatch API Key is required");
 
-                if (string.IsNullOrWhiteSpace(options.CollectorEndpoint))
-                    return false;
+            if (string.IsNullOrWhiteSpace(options.CollectorEndpoint))
+                throw new InvalidOperationException("NetWatch Collector Endpoint is required");
 
-                if (options.FlushIntervalSeconds <= 0)
-                    return false;
+            if (options.FlushIntervalSeconds <= 0)
+                throw new InvalidOperationException("FlushIntervalSeconds must be greater than 0");
 
-                if (options.MaxBufferSize <= 0)
-                    return false;
+            if (options.MaxBufferSize <= 0)
+                throw new InvalidOperationException("MaxBufferSize must be greater than 0");
 
-                if (options.SampleRate < 0.0 || options.SampleRate > 1.0)
-                    return false;
+            if (options.SampleRate < 0.0 || options.SampleRate > 1.0)
+                throw new InvalidOperationException("SampleRate must be between 0.0 and 1.0");
+        });
 
-                return true;
-            }, "Invalid NetWatch configuration");
+        // ✅ Registra HttpClient factory
+        services.AddHttpClient();
 
-        services.AddHttpClient<IMetricsTransport, HttpMetricsTransport>()
-            .ConfigureHttpClient((sp, client) =>
-            {
-                var options = sp.GetRequiredService<IOptions<NetWatchOptions>>().Value;
+        // ✅ Registra Transport manualmente (resolve o problema de scoping)
+        services.TryAddSingleton<IMetricsTransport>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient("NetWatch");
+            var options = sp.GetRequiredService<IOptions<NetWatchOptions>>();
+            var logger = sp.GetRequiredService<ILogger<HttpMetricsTransport>>();
 
-                client.BaseAddress = new Uri(options.CollectorEndpoint);
-                client.Timeout = TimeSpan.FromSeconds(30);
-                client.DefaultRequestHeaders.Add("User-Agent", "NetWatch-SDK/1.0.0");
-                client.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
-            })
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+            return new HttpMetricsTransport(httpClient, options, logger);
+        });
 
+        // ✅ Registra buffer como Singleton
         services.TryAddSingleton<IMetricsBuffer, MetricsBuffer>();
 
         return services;

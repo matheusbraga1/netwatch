@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NetWatch.Sdk.Buffering;
 using NetWatch.Sdk.Configuration;
-using NetWatch.Sdk.Models;
+using NetWatch.Shared.Models;
 using System.Diagnostics;
 using System.Security.Claims;
 

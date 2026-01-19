@@ -13,4 +13,8 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NetWatch.Shared\NetWatch.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

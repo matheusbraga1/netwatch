@@ -1,0 +1,6 @@
+@NetWatch.Collector_HostAddress = http://localhost:5183
+
+GET {{NetWatch.Collector_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

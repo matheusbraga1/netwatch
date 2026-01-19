@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NetWatch.Sdk.Configuration;
-using NetWatch.Sdk.Models;
+using NetWatch.Shared.Models;
 using NetWatch.Sdk.Transport;
 using System.Collections.Concurrent;
 

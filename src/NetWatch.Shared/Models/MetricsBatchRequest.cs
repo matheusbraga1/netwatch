@@ -1,4 +1,4 @@
-﻿namespace NetWatch.Sdk.Models;
+﻿namespace NetWatch.Shared.Models;
 
 public class MetricsBatchRequest
 {

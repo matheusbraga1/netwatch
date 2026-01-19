@@ -1,4 +1,4 @@
-﻿using NetWatch.Sdk.Models;
+﻿using NetWatch.Shared.Models;
 
 namespace NetWatch.Sdk.Buffering;
 
