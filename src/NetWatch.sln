@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetWatch.Sdk", "NetWatch.Sd
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleApi", "..\examples\ExampleApi\ExampleApi.csproj", "{8EF91426-1D1F-4794-87C4-044469D4C3A9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{AA9CD1B8-5EBC-43CA-AAB6-44F327CAE139}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,5 +48,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5FEA752F-4831-49A9-8C3A-D09D92C1C13E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{8EF91426-1D1F-4794-87C4-044469D4C3A9} = {AA9CD1B8-5EBC-43CA-AAB6-44F327CAE139}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DBBD443A-448E-464C-AA1D-F72E03D5B81E}
 	EndGlobalSection
 EndGlobal

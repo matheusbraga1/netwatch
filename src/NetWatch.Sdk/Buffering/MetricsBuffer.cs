@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using NetWatch.Sdk.Configuration;
 using NetWatch.Sdk.Models;
+using NetWatch.Sdk.Transport;
 using System.Collections.Concurrent;
 
 namespace NetWatch.Sdk.Buffering;
@@ -13,13 +14,16 @@ public class MetricsBuffer : IMetricsBuffer, IDisposable
     private readonly ILogger<MetricsBuffer> _logger;
     private readonly Timer _flushTimer;
     private readonly SemaphoreSlim _flushLock = new(1, 1);
+    private readonly IMetricsTransport _transport;
     private int _queueSize = 0;
     private bool _disposed = false;
 
     public MetricsBuffer(
+        IMetricsTransport transport,
         IOptions<NetWatchOptions> options,
         ILogger<MetricsBuffer> logger)
     {
+        _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -71,6 +75,12 @@ public class MetricsBuffer : IMetricsBuffer, IDisposable
 
         try
         {
+            if (_queue.IsEmpty)
+            {
+                _logger.LogTrace("Buffer is empty, nothing to flush");
+                return;
+            }
+
             var batch = new List<RequestMetric>();
             while (_queue.TryDequeue(out var metric) && batch.Count < _options.MaxBufferSize)
             {
@@ -81,11 +91,18 @@ public class MetricsBuffer : IMetricsBuffer, IDisposable
             if (batch.Count == 0)
                 return;
 
-            _logger.LogInformation($"Flushing {batch.Count} metrics to collection.");
+            _logger.LogInformation($"Flushing {batch.Count} metrics to collector.");
 
-            await Task.Delay(100); // Simulate async operation
+            var success = await _transport.SendBatchAsync(batch, CancellationToken.None);
 
-            _logger.LogInformation($"Successfully flushed {batch.Count} metrics.");
+            if (success)
+            {
+                _logger.LogInformation($"Successfully flushed {batch.Count} metrics");
+            }
+            else
+            {
+                _logger.LogWarning($"Failed to flush {batch.Count} metrics");
+            }
         }
         catch (Exception ex)
         {

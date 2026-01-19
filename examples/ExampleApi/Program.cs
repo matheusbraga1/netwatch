@@ -7,7 +7,7 @@ builder.Services.AddNetWatch(options =>
     options.ApiKey = "nw_example_key_12345";
     options.CollectorEndpoint = "http://localhost:5001";
     options.FlushIntervalSeconds = 5;
-    options.MaxBufferSize = 100;
+    options.MaxBufferSize = 10;
     options.SampleRate = 1.0;
 });
 

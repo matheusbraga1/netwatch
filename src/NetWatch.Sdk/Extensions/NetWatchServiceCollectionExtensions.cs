@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using NetWatch.Sdk.Buffering;
 using NetWatch.Sdk.Configuration;
+using NetWatch.Sdk.Transport;
 
 namespace NetWatch.Sdk.Extensions;
 
@@ -39,6 +41,18 @@ public static class NetWatchServiceCollectionExtensions
 
                 return true;
             }, "Invalid NetWatch configuration");
+
+        services.AddHttpClient<IMetricsTransport, HttpMetricsTransport>()
+            .ConfigureHttpClient((sp, client) =>
+            {
+                var options = sp.GetRequiredService<IOptions<NetWatchOptions>>().Value;
+
+                client.BaseAddress = new Uri(options.CollectorEndpoint);
+                client.Timeout = TimeSpan.FromSeconds(30);
+                client.DefaultRequestHeaders.Add("User-Agent", "NetWatch-SDK/1.0.0");
+                client.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
+            })
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
         services.TryAddSingleton<IMetricsBuffer, MetricsBuffer>();
 
