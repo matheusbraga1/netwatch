@@ -6,19 +6,19 @@ using System.Collections.Concurrent;
 
 namespace NetWatch.Sdk.Buffering;
 
-public class MetricBuffer : IMetricsBuffer, IDisposable
+public class MetricsBuffer : IMetricsBuffer, IDisposable
 {
     private readonly ConcurrentQueue<RequestMetric> _queue = new();
     private readonly NetWatchOptions _options;
-    private readonly ILogger<MetricBuffer> _logger;
+    private readonly ILogger<MetricsBuffer> _logger;
     private readonly Timer _flushTimer;
     private readonly SemaphoreSlim _flushLock = new(1, 1);
     private int _queueSize = 0;
     private bool _disposed = false;
 
-    public MetricBuffer(
+    public MetricsBuffer(
         IOptions<NetWatchOptions> options,
-        ILogger<MetricBuffer> logger)
+        ILogger<MetricsBuffer> logger)
     {
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -39,7 +39,7 @@ public class MetricBuffer : IMetricsBuffer, IDisposable
     public async Task AddAsync(RequestMetric metric)
     {
         if (_disposed)
-            throw new ObjectDisposedException(nameof(MetricBuffer));
+            throw new ObjectDisposedException(nameof(MetricsBuffer));
 
         if (metric == null)
             throw new ArgumentNullException(nameof(metric));
