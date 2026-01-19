@@ -2,7 +2,7 @@
 
 public class ErrorResponse
 {
-    public string Message { get; set; } = string.Empty;
+    public string Error { get; set; } = string.Empty;
     public string? Detail { get; set; }
     public List<string>? ValidationErrors { get; set; }
     public string TraceId { get; set; } = string.Empty;

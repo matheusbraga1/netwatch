@@ -1,3 +1,7 @@
+using NetWatch.Collector.HealthChecks;
+using NetWatch.Collector.Services;
+using StackExchange.Redis;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
@@ -39,6 +43,45 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+var redisConnectionString = builder.Configuration.GetValue<string>("Redis:ConnectionString") ?? "localhost:6379";
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var config = ConfigurationOptions.Parse(redisConnectionString);
+        config.AbortOnConnectFail = false;
+        config.ConnectRetry = 3;
+        config.ConnectTimeout = 5000;
+        config.SyncTimeout = 5000;
+
+        var connection = ConnectionMultiplexer.Connect(config);
+
+        connection.ConnectionFailed += (sender, args) =>
+        {
+            logger.LogError($"Redis connection failed: {args.Exception?.Message ?? "Unknown error"}");
+        };
+
+        connection.ConnectionRestored += (sender, args) =>
+        {
+            logger.LogInformation("Redis connection restored");
+        };
+
+        logger.LogInformation($"Connected to Redis at {redisConnectionString}");
+
+        return connection;
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, $"Failed to connect to Redis at {redisConnectionString}");
+        throw;
+    }
+});
+
+builder.Services.AddSingleton<IQueueService, RedisQueueService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -49,7 +92,8 @@ builder.Services.AddCors(options =>
      });
 });
 
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<RedisHealthCheck>("redis");
 
 var app = builder.Build();
 
